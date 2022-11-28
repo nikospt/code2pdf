@@ -70,4 +70,4 @@ done
 echo "\end{document}" >> temp/temp.tex
 
 cd temp
-latexmk --shell-escape -synctex=1 -interaction=nonstopmode -file-line-error -pdf temp.tex
+latexmk --shell-escape -interaction=nonstopmode -file-line-error -pdf temp.tex
