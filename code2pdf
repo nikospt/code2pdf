@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+mkdir temp
+files=""
+language='fortran'
+
+files=""
+echo "options :"
+while [ $# -gt 0 ]
+do
+    unset OPTIND
+    unset OPTARG
+    while getopts :l:  options
+    do
+    case $options in
+            l)  language="$OPTARG";;
+        esac
+   done
+   shift $((OPTIND-1))
+   files="${files} $1 "
+   shift
+done
+
+cat << EOT > temp/temp.tex
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage[default]{sourcecodepro}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.25in,includehead]{geometry}
+\usepackage{minted}
+\usepackage{fancyhdr}
+\usepackage{intcalc}
+\pagestyle{fancy}
+\fancyhf{}
+\setminted{breaklines=true,fontsize=\footnotesize}
+
+\def\pages{2}
+\def\zero{0}
+\def\one{1}
+
+
+\newcommand{\mynewpage}
+{
+    \if\thepage\one \else
+        \if\intcalcMod{\thepage}{\pages}\zero \newpage \else \newpage \ \newpage \fi
+    \fi
+}
+
+\newcommand{\makehead}
+{
+    \fancyhead[L]{\thepage}%
+    \edef\pagesuptonow{\thepage}
+    \fancyhead[R]{Page \the\numexpr\value{page}-\pagesuptonow+1\relax}%
+}
+
+\begin{document}
+\pagestyle{fancy}
+EOT
+
+for file in ${files[@]}; do
+
+    if [ ! -d $file ]; then
+		fileWithEscapedUnderscores=$(sed 's/_/\\_/g' <<<$file)
+        echo "\\mynewpage" >> temp/temp.tex
+        echo "\\makehead" >> temp/temp.tex
+        echo "\\fancyhead[C]{$fileWithEscapedUnderscores}" >> temp/temp.tex
+        echo $file
+        echo "\\inputminted{$language}{../$file}" >> temp/temp.tex
+	fi
+done
+echo "\end{document}" >> temp/temp.tex
+
+cd temp
+latexmk --shell-escape -synctex=1 -interaction=nonstopmode -file-line-error -pdf temp.tex
